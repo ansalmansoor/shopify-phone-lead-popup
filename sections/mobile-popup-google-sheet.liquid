@@ -1,0 +1,635 @@
+{% liquid
+  assign show_popup = false
+
+  case section.settings.show_on
+    when 'all'
+      assign show_popup = true
+
+    when 'home'
+      if template.name == 'index'
+        assign show_popup = true
+      endif
+
+    when 'product'
+      if template.name == 'product'
+        assign show_popup = true
+      endif
+
+    when 'collection'
+      if template.name == 'collection'
+        assign show_popup = true
+      endif
+
+    when 'cart'
+      if template.name == 'cart'
+        assign show_popup = true
+      endif
+
+    when 'page'
+      if template.name == 'page'
+        assign show_popup = true
+      endif
+
+    when 'specific_urls'
+      assign current_url_path = request.path
+      assign selected_urls = section.settings.specific_urls | newline_to_br | split: '<br />'
+
+      for selected_url in selected_urls
+        assign clean_url = selected_url | strip
+        if clean_url != blank and current_url_path == clean_url
+          assign show_popup = true
+        endif
+      endfor
+  endcase
+%}
+
+{% if section.settings.enable_popup and show_popup %}
+  <style>
+    #MobilePopup-{{ section.id }} {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 999999;
+      background: rgba(0, 0, 0, 0.6);
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    #MobilePopup-{{ section.id }} .mobile-popup-box {
+      background: {{ section.settings.popup_bg_color }};
+      color: {{ section.settings.text_color }};
+      max-width: {{ section.settings.popup_width }}px;
+      width: 100%;
+      border-radius: {{ section.settings.border_radius }}px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+      font-family: inherit;
+    }
+
+    #MobilePopup-{{ section.id }} .mobile-popup-close {
+      position: absolute;
+      top: 12px;
+      right: 14px;
+      z-index: 2;
+      background: #ffffff;
+      color: #111111;
+      border: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      font-size: 22px;
+      line-height: 28px;
+      cursor: pointer;
+    }
+
+    #MobilePopup-{{ section.id }} .mobile-popup-image img {
+      width: 100%;
+      display: block;
+      object-fit: cover;
+      max-height: {{ section.settings.image_height }}px;
+    }
+
+    #MobilePopup-{{ section.id }} .mobile-popup-content {
+      padding: 24px;
+      text-align: {{ section.settings.text_alignment }};
+    }
+
+    #MobilePopup-{{ section.id }} h2 {
+      margin: 0 0 10px;
+      font-size: {{ section.settings.heading_size }}px;
+      color: {{ section.settings.heading_color }};
+      line-height: 1.2;
+    }
+
+    #MobilePopup-{{ section.id }} .mobile-popup-text {
+      margin-bottom: 18px;
+      font-size: {{ section.settings.text_size }}px;
+      line-height: 1.5;
+    }
+
+    #MobilePopup-{{ section.id }} .mobile-popup-form input[type="tel"] {
+      width: 100%;
+      padding: 14px;
+      border: 1px solid #dddddd;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+
+    #MobilePopup-{{ section.id }} .mobile-popup-policy {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+      text-align: left;
+      font-size: 12px;
+      line-height: 1.4;
+      margin: 0 0 14px;
+      color: {{ section.settings.text_color }};
+    }
+
+    #MobilePopup-{{ section.id }} .mobile-popup-policy input {
+      width: auto;
+      margin-top: 3px;
+      flex-shrink: 0;
+    }
+
+    #MobilePopup-{{ section.id }} .mobile-popup-policy a {
+      color: {{ section.settings.button_bg_color }};
+      text-decoration: underline;
+    }
+
+    #MobilePopup-{{ section.id }} button[type="submit"] {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 8px;
+      background: {{ section.settings.button_bg_color }};
+      color: {{ section.settings.button_text_color }};
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    #MobilePopup-{{ section.id }} button[type="submit"]:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    #MobilePopup-{{ section.id }} .mobile-popup-message {
+      margin-top: 12px;
+      font-size: 14px;
+    }
+
+    @media screen and (max-width: 749px) {
+      #MobilePopup-{{ section.id }} .mobile-popup-content {
+        padding: 20px;
+      }
+
+      #MobilePopup-{{ section.id }} h2 {
+        font-size: {{ section.settings.mobile_heading_size }}px;
+      }
+    }
+  </style>
+
+  <div id="MobilePopup-{{ section.id }}">
+    <div class="mobile-popup-box">
+      <button class="mobile-popup-close" type="button" aria-label="Close popup">
+        &times;
+      </button>
+
+      {% if section.settings.popup_image != blank %}
+        <div class="mobile-popup-image">
+          <img
+            src="{{ section.settings.popup_image | image_url: width: 900 }}"
+            alt="{{ section.settings.heading | escape }}"
+            loading="lazy"
+          >
+        </div>
+      {% endif %}
+
+      <div class="mobile-popup-content">
+        {% if section.settings.heading != blank %}
+          <h2>{{ section.settings.heading }}</h2>
+        {% endif %}
+
+        {% if section.settings.text != blank %}
+          <div class="mobile-popup-text">
+            {{ section.settings.text }}
+          </div>
+        {% endif %}
+
+        <form class="mobile-popup-form">
+          <input
+            type="tel"
+            class="mobile-popup-phone"
+            placeholder="{{ section.settings.phone_placeholder }}"
+            maxlength="{{ section.settings.phone_max_length }}"
+            required
+          >
+
+          <label class="mobile-popup-policy">
+            <input type="checkbox" class="mobile-popup-policy-checkbox" required>
+            <span>
+              {{ section.settings.policy_text }}
+              {% if section.settings.policy_link != blank %}
+                <a href="{{ section.settings.policy_link }}" target="_blank" rel="noopener">
+                  {{ section.settings.policy_link_text }}
+                </a>
+              {% endif %}
+            </span>
+          </label>
+
+          <button type="submit" class="mobile-popup-submit">
+            {{ section.settings.button_text }}
+          </button>
+
+          <div class="mobile-popup-message"></div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const popup = document.getElementById("MobilePopup-{{ section.id }}");
+      if (!popup) return;
+
+      const form = popup.querySelector(".mobile-popup-form");
+      const phoneInput = popup.querySelector(".mobile-popup-phone");
+      const policyCheckbox = popup.querySelector(".mobile-popup-policy-checkbox");
+      const closeBtn = popup.querySelector(".mobile-popup-close");
+      const message = popup.querySelector(".mobile-popup-message");
+      const submitBtn = popup.querySelector(".mobile-popup-submit");
+
+      const googleScriptUrl = {{ section.settings.google_script_url | json }};
+      const googleSheetId = {{ section.settings.google_sheet_id | json }};
+      const popupDelay = {{ section.settings.popup_delay | times: 1000 }};
+      const showOnce = {{ section.settings.show_once | json }};
+
+      const storageKey = "mobile_popup_submitted_{{ section.id }}";
+      const closeKey = "mobile_popup_closed_{{ section.id }}";
+
+      function openPopup() {
+        if (showOnce && localStorage.getItem(storageKey)) return;
+        if (sessionStorage.getItem(closeKey)) return;
+
+        popup.style.display = "flex";
+      }
+
+      function closePopup() {
+        popup.style.display = "none";
+        sessionStorage.setItem(closeKey, "true");
+      }
+
+      setTimeout(openPopup, popupDelay);
+
+      closeBtn.addEventListener("click", closePopup);
+
+      popup.addEventListener("click", function (event) {
+        if (event.target === popup) {
+          closePopup();
+        }
+      });
+
+      form.addEventListener("submit", function (event) {
+        event.preventDefault();
+
+        const phone = phoneInput.value.trim();
+        const cleanPhoneRegex = new RegExp("^[0-9]{" + {{ section.settings.phone_min_length }} + "," + {{ section.settings.phone_max_length }} + "}$");
+
+        if (!cleanPhoneRegex.test(phone)) {
+          message.style.color = "red";
+          message.textContent = {{ section.settings.error_message | json }};
+          return;
+        }
+
+        if (!policyCheckbox.checked) {
+          message.style.color = "red";
+          message.textContent = {{ section.settings.policy_error_message | json }};
+          return;
+        }
+
+        if (!googleScriptUrl) {
+          message.style.color = "red";
+          message.textContent = "Google Script URL missing.";
+          return;
+        }
+
+        if (!googleSheetId) {
+          message.style.color = "red";
+          message.textContent = "Google Sheet ID missing.";
+          return;
+        }
+
+        message.style.color = "#555";
+        message.textContent = {{ section.settings.loading_message | json }};
+        submitBtn.disabled = true;
+
+        fetch(googleScriptUrl, {
+          method: "POST",
+          mode: "no-cors",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            mobile: phone,
+            sheet_id: googleSheetId,
+            page: window.location.href,
+            source: "Shopify Popup",
+            popup_title: {{ section.settings.heading | json }},
+            policy_accepted: "Yes",
+            policy_text: {{ section.settings.policy_text | json }}
+          })
+        })
+        .then(function () {
+          localStorage.setItem(storageKey, "true");
+
+          message.style.color = "green";
+          message.textContent = {{ section.settings.success_message | json }};
+
+          setTimeout(function () {
+            popup.style.display = "none";
+          }, 1500);
+        })
+        .catch(function () {
+          message.style.color = "red";
+          message.textContent = {{ section.settings.failed_message | json }};
+        })
+        .finally(function () {
+          submitBtn.disabled = false;
+        });
+      });
+    });
+  </script>
+{% endif %}
+
+{% schema %}
+{
+  "name": "Mobile Number Popup",
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "enable_popup",
+      "label": "Enable popup",
+      "default": true
+    },
+    {
+      "type": "select",
+      "id": "show_on",
+      "label": "Show popup on",
+      "options": [
+        {
+          "value": "all",
+          "label": "All pages"
+        },
+        {
+          "value": "home",
+          "label": "Home page only"
+        },
+        {
+          "value": "product",
+          "label": "All product pages"
+        },
+        {
+          "value": "collection",
+          "label": "All collection pages"
+        },
+        {
+          "value": "cart",
+          "label": "Cart page only"
+        },
+        {
+          "value": "page",
+          "label": "All custom pages"
+        },
+        {
+          "value": "specific_urls",
+          "label": "Specific URL paths only"
+        }
+      ],
+      "default": "all"
+    },
+    {
+      "type": "textarea",
+      "id": "specific_urls",
+      "label": "Specific URL paths",
+      "info": "Add one URL path per line. Example: /products/kids-dress or /collections/navratri-collections"
+    },
+    {
+      "type": "image_picker",
+      "id": "popup_image",
+      "label": "Popup image"
+    },
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading",
+      "default": "Get Special Offer"
+    },
+    {
+      "type": "richtext",
+      "id": "text",
+      "label": "Popup text",
+      "default": "<p>Enter your mobile number and receive our exclusive offer.</p>"
+    },
+    {
+      "type": "text",
+      "id": "phone_placeholder",
+      "label": "Phone input placeholder",
+      "default": "Enter mobile number"
+    },
+    {
+      "type": "text",
+      "id": "button_text",
+      "label": "Button text",
+      "default": "Submit"
+    },
+    {
+      "type": "text",
+      "id": "policy_text",
+      "label": "Policy checkbox text",
+      "default": "I agree to receive offers by SMS/WhatsApp and accept the"
+    },
+    {
+      "type": "text",
+      "id": "policy_link_text",
+      "label": "Policy link text",
+      "default": "Privacy Policy"
+    },
+    {
+      "type": "url",
+      "id": "policy_link",
+      "label": "Privacy Policy link"
+    },
+    {
+      "type": "text",
+      "id": "google_script_url",
+      "label": "Google Apps Script Web App URL"
+    },
+    {
+      "type": "text",
+      "id": "google_sheet_id",
+      "label": "Google Sheet ID"
+    },
+    {
+      "type": "range",
+      "id": "popup_delay",
+      "label": "Popup delay in seconds",
+      "min": 0,
+      "max": 20,
+      "step": 1,
+      "default": 3
+    },
+    {
+      "type": "checkbox",
+      "id": "show_once",
+      "label": "Show only once after submit",
+      "default": true
+    },
+    {
+      "type": "range",
+      "id": "phone_min_length",
+      "label": "Minimum phone number length",
+      "min": 6,
+      "max": 15,
+      "step": 1,
+      "default": 10
+    },
+    {
+      "type": "range",
+      "id": "phone_max_length",
+      "label": "Maximum phone number length",
+      "min": 6,
+      "max": 15,
+      "step": 1,
+      "default": 10
+    },
+    {
+      "type": "text",
+      "id": "success_message",
+      "label": "Success message",
+      "default": "Thank you! Your number has been submitted."
+    },
+    {
+      "type": "text",
+      "id": "error_message",
+      "label": "Invalid number message",
+      "default": "Please enter a valid mobile number."
+    },
+    {
+      "type": "text",
+      "id": "policy_error_message",
+      "label": "Policy error message",
+      "default": "Please accept the policy before submitting."
+    },
+    {
+      "type": "text",
+      "id": "loading_message",
+      "label": "Loading message",
+      "default": "Submitting..."
+    },
+    {
+      "type": "text",
+      "id": "failed_message",
+      "label": "Failed message",
+      "default": "Something went wrong. Please try again."
+    },
+    {
+      "type": "header",
+      "content": "Design"
+    },
+    {
+      "type": "range",
+      "id": "popup_width",
+      "label": "Popup width",
+      "min": 300,
+      "max": 700,
+      "step": 20,
+      "default": 420
+    },
+    {
+      "type": "range",
+      "id": "image_height",
+      "label": "Image height",
+      "min": 120,
+      "max": 500,
+      "step": 20,
+      "default": 260
+    },
+    {
+      "type": "range",
+      "id": "border_radius",
+      "label": "Border radius",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "default": 18
+    },
+    {
+      "type": "select",
+      "id": "text_alignment",
+      "label": "Text alignment",
+      "options": [
+        {
+          "value": "left",
+          "label": "Left"
+        },
+        {
+          "value": "center",
+          "label": "Center"
+        },
+        {
+          "value": "right",
+          "label": "Right"
+        }
+      ],
+      "default": "center"
+    },
+    {
+      "type": "range",
+      "id": "heading_size",
+      "label": "Heading size desktop",
+      "min": 18,
+      "max": 48,
+      "step": 1,
+      "default": 28
+    },
+    {
+      "type": "range",
+      "id": "mobile_heading_size",
+      "label": "Heading size mobile",
+      "min": 16,
+      "max": 36,
+      "step": 1,
+      "default": 24
+    },
+    {
+      "type": "range",
+      "id": "text_size",
+      "label": "Text size",
+      "min": 12,
+      "max": 24,
+      "step": 1,
+      "default": 15
+    },
+    {
+      "type": "color",
+      "id": "popup_bg_color",
+      "label": "Popup background color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "heading_color",
+      "label": "Heading color",
+      "default": "#111111"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text color",
+      "default": "#333333"
+    },
+    {
+      "type": "color",
+      "id": "button_bg_color",
+      "label": "Button background color",
+      "default": "#111111"
+    },
+    {
+      "type": "color",
+      "id": "button_text_color",
+      "label": "Button text color",
+      "default": "#ffffff"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Mobile Number Popup"
+    }
+  ]
+}
+{% endschema %}
